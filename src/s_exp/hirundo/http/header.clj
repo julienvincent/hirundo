@@ -13,7 +13,9 @@
             HeaderName
             HeaderNames
             HeaderValues)
-           (java.util Map)))
+           (java.util Map))
+  (:require
+   [clojure.string :as str]))
 
 (defn header-name ^HeaderName
   [s]
@@ -59,8 +61,19 @@
   (size [_]
     (.size headers))
 
+  (isEmpty [_]
+    (= 0 (.size headers)))
+
   (get [_ k]
     (header->value headers k))
+
+  (entrySet [_]
+    (let [entries (java.util.HashSet.)]
+      (doseq [header (-> headers .stream .toArray)]
+        (.add entries (java.util.AbstractMap$SimpleEntry.
+                       (str/lower-case (.name header))
+                       (.value header))))
+      entries))
 
   MapEquivalence
 
