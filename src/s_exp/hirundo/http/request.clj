@@ -1,11 +1,12 @@
 (ns s-exp.hirundo.http.request
-  (:require [clojure.string :as str]
-            [s-exp.hirundo.http.header :as h]
-            [strojure.zmap.core :as zmap])
-  (:import (clojure.lang PersistentHashMap)
-           (io.helidon.common.uri UriQuery UriPath)
-           (io.helidon.http HttpPrologue Headers)
-           (io.helidon.webserver.http ServerRequest ServerResponse)))
+  (:require
+   [clojure.string :as str]
+   [s-exp.hirundo.http.header :as h])
+  (:import
+   (clojure.lang PersistentHashMap)
+   (io.helidon.common.uri UriPath UriQuery)
+   (io.helidon.http Headers HttpPrologue)
+   (io.helidon.webserver.http ServerRequest ServerResponse)))
 
 (defn ring-headers
   [^Headers headers]
@@ -47,12 +48,11 @@
                (when-not (.consumed content) (.inputStream content)))
         ring-request (-> (.asTransient PersistentHashMap/EMPTY)
                          ;; delayed
-                         (.assoc :server-port (zmap/delay (.port (.localPeer server-request))))
-                         (.assoc :server-name (zmap/delay (.host (.localPeer server-request))))
-                         (.assoc :remote-addr (zmap/delay
-                                                (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
-                                                  (-> address .getAddress .getHostAddress))))
-                         (.assoc :ssl-client-cert (zmap/delay (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first)))
+                         (.assoc :server-port (.port (.localPeer server-request)))
+                         (.assoc :server-name (.host (.localPeer server-request)))
+                         (.assoc :remote-addr (let [address ^java.net.InetSocketAddress (.address (.remotePeer server-request))]
+                                                (-> address .getAddress .getHostAddress)))
+                         (.assoc :ssl-client-cert (some-> server-request .remotePeer .tlsCertificates (.orElse nil) first))
                          ;; realized
                          (.assoc :uri (ring-path (.path server-request)))
                          (.assoc :scheme (if (.isSecure server-request) :https :http))
@@ -65,4 +65,4 @@
         ring-request (cond-> ring-request
                        qs (.assoc :query-string (ring-query (.query server-request)))
                        body (.assoc :body body))]
-    (zmap/wrap (.persistent ring-request))))
+    (.persistent ring-request)))
